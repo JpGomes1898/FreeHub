@@ -1,0 +1,47 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// 1. O Usuário
+model User {
+  id       Int     @id @default(autoincrement())
+  name     String
+  email    String  @unique
+  password String
+  userType String  // "CLIENTE" ou "PRESTADOR"
+  
+  // Relacionamentos para diferenciar quem pede e quem faz
+  clientServices   ServiceRequest[] @relation("ClientServices")
+  providerServices ServiceRequest[] @relation("ProviderServices")
+}
+
+// 2. O Pedido de Serviço (Tudo em um único lugar)
+model ServiceRequest {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  budget      Float
+  status      String   @default("ABERTO") // ABERTO, ANALISE, EM_ANDAMENTO, CONCLUIDO
+  
+  // CAMPOS DE LOCALIZAÇÃO
+  address     String?  // Endereço escrito
+  latitude    Float?   // GPS Latitude
+  longitude   Float?   // GPS Longitude
+
+  // Relacionamento com Cliente (Quem pediu)
+  clientId    Int
+  client      User     @relation("ClientServices", fields: [clientId], references: [id])
+
+  // Relacionamento com Prestador (Quem aceitou)
+  providerId  Int?
+  provider    User?    @relation("ProviderServices", fields: [providerId], references: [id])
+
+  createdAt   DateTime @default(now())
+}

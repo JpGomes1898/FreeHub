@@ -1,0 +1,13 @@
+# Dependências gigantes (não subir)
+node_modules/
+
+# Arquivos de sistema (não subir)
+.DS_Store
+dist/
+build/
+
+# Segurança e Banco de Dados Local (não subir)
+.env
+*.db
+*.sqlite
+*.sqlite-journal
