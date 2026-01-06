@@ -5,8 +5,8 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -14,22 +14,22 @@ const SECRET_KEY = process.env.JWT_SECRET || "chave_secreta_padrao";
 
 app.use(express.json());
 app.use(cors());
-app.use('/uploads', express.static('uploads'));
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = 'uploads/';
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath);
-    }
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const upload = multer({ storage });
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'freehub-uploads',
+    allowed_formats: ['jpg', 'png', 'jpeg'],
+  },
+});
+
+const upload = multer({ storage: storage });
 
 function validatePassword(password) {
   const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
@@ -87,7 +87,8 @@ app.get('/services', async (req, res) => {
 
 app.post('/services', upload.single('image'), async (req, res) => {
   const { title, description, budget, clientId, address } = req.body;
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  
+  const imageUrl = req.file ? req.file.path : null;
 
   try {
     const service = await prisma.serviceRequest.create({
@@ -232,5 +233,5 @@ app.get('/earnings/:userId', async (req, res) => {
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`🚀 Backend com Uploads rodando em http://localhost:${port}`);
+  console.log(`🚀 Backend com Cloudinary rodando em http://localhost:${port}`);
 });
