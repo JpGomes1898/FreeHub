@@ -34,7 +34,7 @@ export default function ServiceCard({ service, userType, onAccept, onCounterOffe
       {service.imageUrl && (
         <div className="w-full h-48 mb-4 rounded-xl overflow-hidden border border-white/10">
           <img 
-            src={`http://localhost:3000${service.imageUrl}`} 
+            src={`https://freehub-api.onrender.com${service.imageUrl}`} 
             alt={service.title} 
             className="w-full h-full object-cover transition duration-500 group-hover:scale-110"
           />

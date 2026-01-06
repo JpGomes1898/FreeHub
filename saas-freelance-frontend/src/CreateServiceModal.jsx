@@ -63,7 +63,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
     }
 
     try {
-      const response = await fetch('http://localhost:3000/services', {
+      const response = await fetch('https://freehub-api.onrender.com/services', {
         method: 'POST',
         body: formData 
       });

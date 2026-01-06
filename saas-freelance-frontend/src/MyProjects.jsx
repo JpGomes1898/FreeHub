@@ -16,7 +16,7 @@ export default function MyProjects() {
 
   async function fetchMyProjects() {
     try {
-      const response = await fetch(`http://localhost:3000/my-projects/${user.id}`);
+      const response = await fetch(`https://freehub-api.onrender.com/my-projects/${user.id}`);
       const data = await response.json();
       setProjects(data);
     } catch (error) {
@@ -30,7 +30,7 @@ export default function MyProjects() {
     if (!confirm("Tem certeza que deseja finalizar este serviço? Isso não pode ser desfeito.")) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/services/${id}/finish`, { method: 'PATCH' });
+      const response = await fetch(`https://freehub-api.onrender.com/services/${id}/finish`, { method: 'PATCH' });
       
       if (response.ok) {
         setProjects(prevProjects => 

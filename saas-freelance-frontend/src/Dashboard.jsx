@@ -30,7 +30,7 @@ export default function Dashboard() {
 
   const fetchServices = async () => {
     try {
-      const response = await fetch('http://localhost:3000/services');
+      const response = await fetch('https://freehub-api.onrender.com/services');
       const data = await response.json();
       setServices(data);
     } catch (error) {
@@ -42,7 +42,7 @@ export default function Dashboard() {
 
   const handleAccept = async (serviceId) => {
     try {
-      const response = await fetch(`http://localhost:3000/services/${serviceId}/accept`, {
+      const response = await fetch(`https://freehub-api.onrender.com/services/${serviceId}/accept`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ providerId: user.id })
@@ -62,7 +62,7 @@ export default function Dashboard() {
   const handleSubmitCounterOffer = async (newPrice) => {
     if (!selectedServiceForNegotiation) return;
     try {
-      const response = await fetch(`http://localhost:3000/services/${selectedServiceForNegotiation.id}/offer`, {
+      const response = await fetch(`https://freehub-api.onrender.com/services/${selectedServiceForNegotiation.id}/offer`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ providerId: user.id, newPrice })
@@ -81,7 +81,7 @@ export default function Dashboard() {
 
   const handleClientApprove = async (serviceId) => {
     try {
-      const response = await fetch(`http://localhost:3000/services/${serviceId}/approve`, { method: 'PATCH' });
+      const response = await fetch(`https://freehub-api.onrender.com/services/${serviceId}/approve`, { method: 'PATCH' });
       if (response.ok) {
         showToast("Proposta aprovada! Serviço em andamento.", "success");
         fetchServices();
@@ -92,7 +92,7 @@ export default function Dashboard() {
   const handleClientReject = async (serviceId) => {
     if(!confirm("Tem certeza que quer recusar e voltar o serviço para o mural?")) return;
     try {
-      const response = await fetch(`http://localhost:3000/services/${serviceId}/reject`, { method: 'PATCH' });
+      const response = await fetch(`https://freehub-api.onrender.com/services/${serviceId}/reject`, { method: 'PATCH' });
       if (response.ok) {
         showToast("Proposta recusada. Serviço está aberto novamente.", "success");
         fetchServices();

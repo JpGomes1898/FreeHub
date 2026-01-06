@@ -17,7 +17,7 @@ export default function MyProfile() {
 
   const fetchEarnings = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/earnings/${user.id}`);
+      const response = await fetch(`https://freehub-api.onrender.com/earnings/${user.id}`);
       const data = await response.json();
       setEarnings(data);
     } catch (error) {
