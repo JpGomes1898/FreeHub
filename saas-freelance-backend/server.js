@@ -4,6 +4,9 @@ const { PrismaClient } = require('@prisma/client');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const prisma = new PrismaClient();
@@ -11,6 +14,22 @@ const SECRET_KEY = process.env.JWT_SECRET || "chave_secreta_padrao";
 
 app.use(express.json());
 app.use(cors());
+app.use('/uploads', express.static('uploads'));
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = 'uploads/';
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath);
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
 
 function validatePassword(password) {
   const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
@@ -60,13 +79,15 @@ app.get('/services', async (req, res) => {
         { status: 'ANALISE' }
       ]
     },
-    include: { client: { select: { name: true } } }
+    include: { client: { select: { name: true } } },
+    orderBy: { createdAt: 'desc' }
   });
   return res.json(services);
 });
 
-app.post('/services', async (req, res) => {
+app.post('/services', upload.single('image'), async (req, res) => {
   const { title, description, budget, clientId, address } = req.body;
+  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
     const service = await prisma.serviceRequest.create({
@@ -77,6 +98,7 @@ app.post('/services', async (req, res) => {
         status: 'ABERTO',
         clientId: parseInt(clientId),
         address: address || "Endereço não informado",
+        imageUrl: imageUrl,
         latitude: null,
         longitude: null
       }
@@ -136,7 +158,8 @@ app.get('/my-projects/:providerId', async (req, res) => {
           { status: 'CONCLUIDO' }
         ]
       },
-      include: { client: { select: { name: true } } }
+      include: { client: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' }
     });
     return res.json(services);
   } catch (error) {
@@ -163,7 +186,7 @@ app.patch('/services/:id/reject', async (req, res) => {
     const service = await prisma.serviceRequest.update({
       where: { id: parseInt(id) },
       data: { 
-        status: 'ABERTO',   
+        status: 'ABERTO',
         providerId: null
       }
     });
@@ -188,7 +211,6 @@ app.patch('/services/:id/finish', async (req, res) => {
 
 app.get('/earnings/:userId', async (req, res) => {
   const { userId } = req.params;
-  
   try {
     const completedServices = await prisma.serviceRequest.findMany({
       where: { 
@@ -197,9 +219,7 @@ app.get('/earnings/:userId', async (req, res) => {
       },
       orderBy: { createdAt: 'desc' }
     });
-
     const totalEarnings = completedServices.reduce((acc, curr) => acc + curr.budget, 0);
-
     return res.json({
       total: totalEarnings,
       count: completedServices.length,
@@ -212,5 +232,5 @@ app.get('/earnings/:userId', async (req, res) => {
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`🚀 Backend Seguro rodando em http://localhost:${port}`);
+  console.log(`🚀 Backend com Uploads rodando em http://localhost:${port}`);
 });

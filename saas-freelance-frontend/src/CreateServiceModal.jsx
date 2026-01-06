@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, DollarSign, Type, FileText, MapPin, Search } from 'lucide-react';
+import { X, DollarSign, Type, FileText, MapPin, Image as ImageIcon } from 'lucide-react';
 
 export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }) {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -7,6 +7,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [budget, setBudget] = useState('');
+  const [imageFile, setImageFile] = useState(null);
 
   const [cep, setCep] = useState('');
   const [street, setStreet] = useState('');
@@ -23,14 +24,11 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
 
   const handleBlurCep = async () => {
     const cleanCep = cep.replace(/\D/g, '');
-    
     if (cleanCep.length !== 8) return;
-
     setCepLoading(true);
     try {
       const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
       const data = await response.json();
-
       if (!data.erro) {
         setStreet(data.logradouro);
         setNeighborhood(data.bairro);
@@ -54,23 +52,20 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
 
     const formattedAddress = `${street}, ${number} ${complement ? '- ' + complement : ''} - ${neighborhood}, ${city} - ${state}`;
 
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('budget', budget);
+    formData.append('clientId', user.id);
+    formData.append('address', formattedAddress);
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:3000/services', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          budget,
-          clientId: user.id,
-          address: formattedAddress,
-          latitude: null,
-          longitude: null
-        })
+        body: formData 
       });
 
       if (!response.ok) throw new Error('Erro ao criar serviço');
@@ -79,7 +74,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
       onServiceCreated();
       onClose();
       
-      setTitle(''); setDescription(''); setBudget('');
+      setTitle(''); setDescription(''); setBudget(''); setImageFile(null);
       setCep(''); setStreet(''); setNumber(''); setComplement(''); setNeighborhood(''); setCity(''); setState('');
 
     } catch (error) {
@@ -101,7 +96,6 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
 
         <form onSubmit={handleSubmit} className="space-y-4">
           
-          {}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm text-gray-400 mb-1">Título</label>
@@ -120,9 +114,22 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
                   value={description} onChange={(e) => setDescription(e.target.value)} />
               </div>
             </div>
+
+            <div className="md:col-span-1">
+              <label className="block text-sm text-gray-400 mb-1">Foto do Problema (Opcional)</label>
+              <div className="relative">
+                <div className="absolute left-3 top-3 text-gray-500"><ImageIcon size={20} /></div>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files[0])}
+                  className="w-full bg-black/40 border border-white/10 rounded-lg py-2.5 pl-10 pr-4 text-sm text-gray-300 file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-blue-600 file:text-white hover:file:bg-blue-500"
+                />
+              </div>
+            </div>
             
-             <div className="md:col-span-2">
-              <label className="block text-sm text-gray-400 mb-1">Orçamento (R$)</label>
+             <div className="md:col-span-1">
+              <label className="block text-sm text-gray-400 mb-1">Orçamento Sugerido (R$)</label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
                 <input required type="number" placeholder="0,00" className="w-full bg-black/40 border border-white/10 rounded-lg py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
@@ -133,13 +140,11 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
 
           <div className="border-t border-white/10 my-4"></div>
 
-          {}
           <h3 className="text-sm font-bold text-blue-400 flex items-center gap-2 mb-3">
             <MapPin size={16} /> Endereço do Serviço
           </h3>
 
           <div className="grid grid-cols-3 gap-4">
-            {}
             <div className="col-span-1 relative">
               <input required type="text" placeholder="CEP" maxLength={9}
                 className="w-full bg-black/40 border border-white/10 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
@@ -150,31 +155,26 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
               {cepLoading && <div className="absolute right-3 top-3 animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />}
             </div>
 
-             {}
              <div className="col-span-2 flex gap-2">
                 <input disabled type="text" placeholder="Cidade" className="w-full bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-gray-400 cursor-not-allowed" value={city} />
                 <input disabled type="text" placeholder="UF" className="w-20 bg-white/5 border border-white/10 rounded-lg py-3 px-4 text-gray-400 cursor-not-allowed" value={state} />
             </div>
 
-            {}
             <div className="col-span-3">
               <input required type="text" placeholder="Rua / Avenida" className="w-full bg-black/40 border border-white/10 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 value={street} onChange={(e) => setStreet(e.target.value)} />
             </div>
 
-            {}
             <div className="col-span-1">
               <input id="numeroInput" required type="text" placeholder="Nº" className="w-full bg-black/40 border border-white/10 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 value={number} onChange={(e) => setNumber(e.target.value)} />
             </div>
 
-            {}
             <div className="col-span-2">
-              <input type="text" placeholder="Complemento (Apto, Bloco...)" className="w-full bg-black/40 border border-white/10 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+              <input type="text" placeholder="Complemento" className="w-full bg-black/40 border border-white/10 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 value={complement} onChange={(e) => setComplement(e.target.value)} />
             </div>
 
-            {}
             <div className="col-span-3">
               <input required type="text" placeholder="Bairro" className="w-full bg-black/40 border border-white/10 rounded-lg py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
                 value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} />
@@ -182,7 +182,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
           </div>
 
           <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg mt-6 transition shadow-lg disabled:opacity-50">
-            {loading ? 'Publicando...' : 'Publicar Pedido'}
+            {loading ? 'Enviando...' : 'Publicar Pedido'}
           </button>
         </form>
       </div>

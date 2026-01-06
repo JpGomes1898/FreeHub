@@ -11,35 +11,38 @@ datasource db {
 
 // 1. O Usuário
 model User {
-  id       Int     @id @default(autoincrement())
-  name     String
-  email    String  @unique
-  password String
-  userType String  // "CLIENTE" ou "PRESTADOR"
+  id               Int              @id @default(autoincrement())
+  name             String
+  email            String           @unique
+  password         String
+  userType         String
   
-  // Relacionamentos para diferenciar quem pede e quem faz
+  // Relacionamentos
   clientServices   ServiceRequest[] @relation("ClientServices")
   providerServices ServiceRequest[] @relation("ProviderServices")
 }
 
-// 2. O Pedido de Serviço (Tudo em um único lugar)
+// 2. O Pedido de Serviço
 model ServiceRequest {
   id          Int      @id @default(autoincrement())
   title       String
   description String
   budget      Float
-  status      String   @default("ABERTO") // ABERTO, ANALISE, EM_ANDAMENTO, CONCLUIDO
+  status      String   @default("ABERTO")
   
-  // CAMPOS DE LOCALIZAÇÃO
-  address     String?  // Endereço escrito
-  latitude    Float?   // GPS Latitude
-  longitude   Float?   // GPS Longitude
+  // Endereço e Localização
+  address     String?
+  latitude    Float?
+  longitude   Float?
 
-  // Relacionamento com Cliente (Quem pediu)
+  // NOVO CAMPO: Imagem
+  imageUrl    String?
+
+  // Quem criou (Cliente)
   clientId    Int
   client      User     @relation("ClientServices", fields: [clientId], references: [id])
 
-  // Relacionamento com Prestador (Quem aceitou)
+  // Quem aceitou (Prestador)
   providerId  Int?
   provider    User?    @relation("ProviderServices", fields: [providerId], references: [id])
 
