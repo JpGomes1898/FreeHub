@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from './DashboardLayout';
 import ServiceCard from './ServiceCard';
 import NegotiateModal from './NegotiateModal';
 import ServiceDetailsModal from './ServiceDetailsModal'; 
-import { Search, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Search, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
 
 export default function Dashboard() {
   const [services, setServices] = useState([]);
@@ -18,6 +19,8 @@ export default function Dashboard() {
   const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  const isClient = user.role === 'client' || user.userType === 'client';
 
   useEffect(() => {
     fetchServices();
@@ -110,7 +113,6 @@ export default function Dashboard() {
     <DashboardLayout>
       <div className="max-w-7xl mx-auto relative">
         
-        {}
         {notification && (
           <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transition-all ${notification.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
             {notification.type === 'success' ? <CheckCircle size={24} /> : <AlertTriangle size={24} />}
@@ -118,13 +120,24 @@ export default function Dashboard() {
           </div>
         )}
 
-        {}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
             <h2 className="text-3xl font-bold text-white">Mural de Oportunidades</h2>
             <p className="text-gray-400 mt-2">Gerencie seus pedidos e propostas.</p>
           </div>
-          <div className="flex gap-2 w-full md:w-auto">
+          
+          <div className="flex gap-2 w-full md:w-auto items-center">
+             
+             {isClient && (
+                <Link 
+                  to="/new-service" 
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-medium transition shadow-lg shadow-blue-900/20 whitespace-nowrap"
+                >
+                  <Plus size={20} />
+                  Novo Serviço
+                </Link>
+             )}
+
              <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
               <input type="text" placeholder="Buscar serviços..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
@@ -133,7 +146,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {}
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
@@ -145,7 +157,7 @@ export default function Dashboard() {
                 <ServiceCard 
                   key={service.id} 
                   service={service} 
-                  userType={user.userType}
+                  userType={user.userType || user.role}
                   onAccept={handleAccept}
                   onCounterOffer={() => openNegotiation(service)}
                   onRefuse={handleRefuse}
@@ -162,7 +174,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {}
         <NegotiateModal 
           isOpen={isNegotiateModalOpen} 
           onClose={() => setIsNegotiateModalOpen(false)}
@@ -171,12 +182,11 @@ export default function Dashboard() {
           currentBudget={selectedServiceForNegotiation?.budget}
         />
 
-        {}
         <ServiceDetailsModal 
           isOpen={!!selectedServiceDetails}
           onClose={() => setSelectedServiceDetails(null)}
           service={selectedServiceDetails}
-          userType={user.userType}
+          userType={user.userType || user.role}
           onAccept={handleAccept}
           onCounterOffer={openNegotiation} 
           onClientApprove={handleClientApprove}
