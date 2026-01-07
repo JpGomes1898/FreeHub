@@ -118,7 +118,7 @@ app.get('/services', async (req, res) => {
   try {
     const services = await prisma.serviceRequest.findMany({
       include: {
-        user: {
+        client: {
           select: { name: true, email: true }
         }
       },
