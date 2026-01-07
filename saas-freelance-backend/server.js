@@ -53,7 +53,6 @@ app.post('/register', async (req, res) => {
         name,
         email,
         password: hashedPassword,
-        role: role || 'client',
         userType: role || 'client',
       },
     });
