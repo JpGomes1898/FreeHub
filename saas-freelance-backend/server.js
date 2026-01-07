@@ -59,10 +59,13 @@ app.post('/register', async (req, res) => {
 
     const { password: _, ...userWithoutPassword } = user;
 
-    return res.status(201).json(userWithoutPassword);
+    return res.status(201).json({
+      ...userWithoutPassword,
+      role: user.userType
+    });
 
   } catch (error) {
-    console.error("❌ ERRO CRÍTICO NO REGISTRO:", error); 
+    console.error("Erro no registro:", error);
     return res.status(500).json({ error: "Erro interno ao criar usuário." });
   }
 });
@@ -80,7 +83,11 @@ app.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     const { password: _, ...userData } = user;
-    res.json({ user: userData, token });
+    
+    res.json({
+      user: { ...userData, role: user.userType },
+      token
+    });
   } catch (error) {
     console.error("Erro no login:", error);
     res.status(500).json({ error: "Erro ao fazer login." });
@@ -93,7 +100,7 @@ app.post('/services', upload.single('image'), async (req, res) => {
     let imageUrl = null;
 
     if (req.file) {
-      imageUrl = req.file.path; 
+      imageUrl = req.file.path;
     }
 
     const service = await prisma.serviceRequest.create({
