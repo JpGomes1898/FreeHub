@@ -11,11 +11,9 @@ const cloudinary = require('cloudinary').v2;
 const app = express();
 const prisma = new PrismaClient();
 
-// Configurações básicas
 app.use(express.json());
 app.use(cors());
 
-// --- Configuração do Cloudinary ---
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -32,19 +30,14 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage: storage });
 
-// --- ROTAS ---
-
-// Rota de Teste (para saber se o servidor está vivo)
 app.get('/', (req, res) => {
   res.send('API do FreeHub está rodando! 🚀');
 });
 
-// 1. REGISTRO DE USUÁRIO (Com Log de Erro para Debug)
 app.post('/register', async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Verifica se usuário já existe
     const userExists = await prisma.user.findUnique({
       where: { email },
     });
@@ -53,34 +46,28 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ error: "E-mail já cadastrado." });
     }
 
-    // Criptografa a senha
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Cria o usuário no Banco
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: role || 'client', // Padrão é cliente se não vier nada
+        role: role || 'client',
+        userType: role || 'client',
       },
     });
 
-    // Remove a senha antes de devolver os dados
     const { password: _, ...userWithoutPassword } = user;
 
     return res.status(201).json(userWithoutPassword);
 
   } catch (error) {
-    // AQUI ESTÁ O SEGREDO PARA DESCOBRIRMOS O ERRO NO RENDER
     console.error("❌ ERRO CRÍTICO NO REGISTRO:", error); 
-    
-    // Retorna o erro 500
     return res.status(500).json({ error: "Erro interno ao criar usuário." });
   }
 });
 
-// 2. LOGIN
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -101,14 +88,13 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// 3. CRIAR SERVIÇO (Com Upload de Imagem)
 app.post('/services', upload.single('image'), async (req, res) => {
   try {
     const { title, description, price, userId } = req.body;
     let imageUrl = null;
 
     if (req.file) {
-      imageUrl = req.file.path; // URL da imagem no Cloudinary
+      imageUrl = req.file.path; 
     }
 
     const service = await prisma.serviceRequest.create({
@@ -129,7 +115,6 @@ app.post('/services', upload.single('image'), async (req, res) => {
   }
 });
 
-// 4. LISTAR SERVIÇOS
 app.get('/services', async (req, res) => {
   try {
     const services = await prisma.serviceRequest.findMany({
@@ -147,7 +132,6 @@ app.get('/services', async (req, res) => {
   }
 });
 
-// Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
