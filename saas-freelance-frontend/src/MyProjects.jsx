@@ -5,7 +5,18 @@ import { DollarSign, CheckCircle, Clock, Briefcase, Wallet } from 'lucide-react'
 export default function MyProjects() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  // --- PROTEÇÃO ANTI-CRASH ---
+  let user = {};
+  try {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
+      user = JSON.parse(storedUser);
+    }
+  } catch (error) {
+    console.error("Erro ao ler usuário:", error);
+  }
+  // ---------------------------
 
   useEffect(() => {
     fetchMyProjects();
@@ -16,9 +27,10 @@ export default function MyProjects() {
       const response = await fetch('https://freehub-api.onrender.com/services');
       const data = await response.json();
       
-      const myServices = data.filter(service => 
+      // Filtra apenas se user.id existir
+      const myServices = Array.isArray(data) && user.id ? data.filter(service => 
         service.providerId === user.id
-      );
+      ) : [];
       
       setProjects(myServices);
     } catch (error) {
@@ -46,7 +58,7 @@ export default function MyProjects() {
   };
 
   const completedProjects = projects.filter(p => p.status === 'finished');
-  const activeProjects = projects.filter(p => p.status === 'in_progress' || p.status === 'accepted');
+  const activeProjects = projects.filter(p => p.status === 'accepted');
   const totalEarnings = completedProjects.reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
 
   return (
@@ -57,10 +69,10 @@ export default function MyProjects() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
           
           <div className="h-24 w-24 rounded-full bg-gradient-to-br from-blue-600 to-emerald-600 flex items-center justify-center text-3xl font-bold text-white shadow-lg z-10">
-            {user.name?.charAt(0)}
+            {user.name?.charAt(0) || 'U'}
           </div>
           <div className="z-10">
-            <h2 className="text-3xl font-bold text-white">{user.name}</h2>
+            <h2 className="text-3xl font-bold text-white">{user.name || 'Visitante'}</h2>
             <div className="flex items-center gap-2 mt-2">
               <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-wider border border-emerald-500/20 flex items-center gap-1">
                 <Briefcase size={12} /> Prestador

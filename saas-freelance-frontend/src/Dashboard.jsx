@@ -16,7 +16,17 @@ export default function Dashboard() {
   const [notification, setNotification] = useState(null);
   const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  // --- PROTEÇÃO ANTI-CRASH ---
+  let user = {};
+  try {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
+      user = JSON.parse(storedUser);
+    }
+  } catch (error) {
+    console.error("Erro ao ler usuário:", error);
+  }
+  // ---------------------------
 
   useEffect(() => {
     fetchServices();
@@ -172,7 +182,7 @@ export default function Dashboard() {
           onClose={() => setIsNegotiateModalOpen(false)}
           onSubmit={handleSubmitCounterOffer} 
           serviceTitle={selectedServiceForNegotiation?.title} 
-          currentBudget={selectedServiceForNegotiation?.price || selectedServiceForNegotiation?.budget}
+          currentBudget={selectedServiceForNegotiation?.price}
         />
 
         <ServiceDetailsModal 
