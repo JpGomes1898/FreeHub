@@ -1,7 +1,7 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Login from './Login';
+import Register from './Register';
 import Dashboard from './Dashboard';
 import MyProjects from './MyProjects';
 
