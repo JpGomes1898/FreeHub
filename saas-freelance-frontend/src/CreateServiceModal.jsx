@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
-import { X, Upload, DollarSign, Loader } from 'lucide-react';
+import { X, Upload, DollarSign, Loader, MapPin } from 'lucide-react';
 
 export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }) {
   const [loading, setLoading] = useState(false);
+  
+  // Estados separados para o endereço
+  const [cep, setCep] = useState('');
+  const [address, setAddress] = useState({
+    street: '',
+    number: '',
+    neighborhood: '',
+    city: '',
+    uf: ''
+  });
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -19,9 +30,35 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleAddressChange = (e) => {
+    const { name, value } = e.target;
+    setAddress(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setFormData(prev => ({ ...prev, image: e.target.files[0] }));
+    }
+  };
+
+  // Busca CEP automático
+  const handleCepBlur = async () => {
+    if (cep.length === 8) {
+      try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+        if (!data.erro) {
+          setAddress(prev => ({
+            ...prev,
+            street: data.logradouro,
+            neighborhood: data.bairro,
+            city: data.localidade,
+            uf: data.uf
+          }));
+        }
+      } catch (error) {
+        console.error("Erro CEP", error);
+      }
     }
   };
 
@@ -30,11 +67,16 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
     setLoading(true);
 
     try {
+      // Monta o endereço completo numa string só para salvar no banco
+      const fullLocation = `${address.street}, ${address.number} - ${address.neighborhood}, ${address.city}/${address.uf} (CEP: ${cep})`;
+
       const data = new FormData();
       data.append('title', formData.title);
       data.append('description', formData.description);
       data.append('price', formData.price);
       data.append('userId', user.id);
+      data.append('location', fullLocation); // Envia o endereço
+      
       if (formData.image) {
         data.append('image', formData.image);
       }
@@ -51,7 +93,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
       } else {
         const errorText = await response.text();
         console.error("Erro backend:", errorText);
-        alert('Erro ao criar serviço. Tente novamente.');
+        alert('Erro ao criar serviço.');
       }
     } catch (error) {
       console.error(error);
@@ -80,7 +122,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder="Ex: Formatar Computador, Consertar Vazamento..."
+              placeholder="Ex: Formatar Computador..."
               className="w-full bg-[#0f1014] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -112,6 +154,60 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
                   required
                 />
               </div>
+            </div>
+          </div>
+
+          {/* ÁREA DE ENDEREÇO */}
+          <div className="bg-white/5 p-4 rounded-xl border border-white/5 space-y-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <MapPin size={16} className="text-blue-400"/> Endereço do Serviço
+            </h3>
+            
+            <div className="grid grid-cols-3 gap-4">
+                <input 
+                    placeholder="CEP" 
+                    value={cep} 
+                    onChange={(e) => setCep(e.target.value)} 
+                    onBlur={handleCepBlur}
+                    className="col-span-1 bg-[#0f1014] border border-white/10 rounded-lg p-2 text-white text-sm"
+                />
+                <input 
+                    name="city"
+                    placeholder="Cidade" 
+                    value={address.city} 
+                    onChange={handleAddressChange}
+                    className="col-span-1 bg-[#0f1014] border border-white/10 rounded-lg p-2 text-white text-sm"
+                />
+                <input 
+                    name="uf"
+                    placeholder="UF" 
+                    value={address.uf} 
+                    onChange={handleAddressChange}
+                    className="col-span-1 bg-[#0f1014] border border-white/10 rounded-lg p-2 text-white text-sm"
+                />
+            </div>
+            <input 
+                name="street"
+                placeholder="Rua / Logradouro" 
+                value={address.street} 
+                onChange={handleAddressChange}
+                className="w-full bg-[#0f1014] border border-white/10 rounded-lg p-2 text-white text-sm"
+            />
+            <div className="grid grid-cols-2 gap-4">
+                <input 
+                    name="number"
+                    placeholder="Número" 
+                    value={address.number} 
+                    onChange={handleAddressChange}
+                    className="bg-[#0f1014] border border-white/10 rounded-lg p-2 text-white text-sm"
+                />
+                <input 
+                    name="neighborhood"
+                    placeholder="Bairro" 
+                    value={address.neighborhood} 
+                    onChange={handleAddressChange}
+                    className="bg-[#0f1014] border border-white/10 rounded-lg p-2 text-white text-sm"
+                />
             </div>
           </div>
 
