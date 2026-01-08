@@ -1,50 +1,67 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {datasource db {
+datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// 1. O Usuário
 model User {
-  id               Int              @id @default(autoincrement())
+  id               String    @id @default(uuid())
   name             String
-  email            String           @unique
+  email            String    @unique
   password         String
-  userType         String
-  
-  // Relacionamentos
-  clientServices   ServiceRequest[] @relation("ClientServices")
-  providerServices ServiceRequest[] @relation("ProviderServices")
+  userType         String    @default("client")
+  createdAt        DateTime  @default(now())
+
+  servicesCreated  Service[] @relation("ClientServices")
+  servicesProvided Service[] @relation("ProviderServices")
+
+  messages         Message[]
+  reviews          Review[]
 }
 
-// 2. O Pedido de Serviço
-model ServiceRequest {
-  id          Int      @id @default(autoincrement())
+model Service {
+  id          String   @id @default(uuid())
   title       String
   description String
-  budget      Float
-  status      String   @default("ABERTO")
-  
-  // Endereço e Localização
-  address     String?
-  latitude    Float?
-  longitude   Float?
-
-  // NOVO CAMPO: Imagem
+  price       String
   imageUrl    String?
+  status      String   @default("open")
+  createdAt   DateTime @default(now())
 
-  // Quem criou (Cliente)
-  clientId    Int
-  client      User     @relation("ClientServices", fields: [clientId], references: [id])
+  userId      String
+  client      User     @relation("ClientServices", fields: [userId], references: [id])
 
-  // Quem aceitou (Prestador)
-  providerId  Int?
+  providerId  String?
   provider    User?    @relation("ProviderServices", fields: [providerId], references: [id])
 
-  createdAt   DateTime @default(now())
+  messages    Message[]
+  review      Review?
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id])
+
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  serviceId String   @unique
+  service   Service  @relation(fields: [serviceId], references: [id])
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
