@@ -31,9 +31,15 @@ export default function Dashboard() {
     try {
       const response = await fetch('https://freehub-api.onrender.com/services');
       const data = await response.json();
-      setServices(data);
+      
+      if (Array.isArray(data)) {
+        setServices(data);
+      } else {
+        setServices([]);
+      }
     } catch (error) {
       console.error("Erro ao buscar serviços:", error);
+      setServices([]);
     } finally {
       setLoading(false);
     }
@@ -99,7 +105,9 @@ export default function Dashboard() {
     } catch (e) { showToast("Erro ao recusar.", "error"); }
   };
 
-  const filteredServices = services.filter(service => 
+  const safeServices = Array.isArray(services) ? services : [];
+
+  const filteredServices = safeServices.filter(service => 
     !hiddenServices.includes(service.id) && 
     (service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     service.description.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -116,7 +124,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* CABEÇALHO LIMPO (Sem o botão duplicado) */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
             <h2 className="text-3xl font-bold text-white">Mural de Oportunidades</h2>
@@ -165,7 +172,7 @@ export default function Dashboard() {
           onClose={() => setIsNegotiateModalOpen(false)}
           onSubmit={handleSubmitCounterOffer} 
           serviceTitle={selectedServiceForNegotiation?.title} 
-          currentBudget={selectedServiceForNegotiation?.budget}
+          currentBudget={selectedServiceForNegotiation?.price || selectedServiceForNegotiation?.budget}
         />
 
         <ServiceDetailsModal 

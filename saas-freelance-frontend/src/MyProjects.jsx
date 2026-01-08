@@ -22,7 +22,7 @@ export default function MyProjects() {
       
       setProjects(myServices);
     } catch (error) {
-      console.error("Erro ao buscar projetos:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -37,17 +37,16 @@ export default function MyProjects() {
       });
       
       if (response.ok) {
-        alert("Serviço finalizado e valor adicionado à carteira!");
+        alert("Serviço finalizado! O cliente poderá te avaliar agora.");
         fetchMyProjects();
       }
     } catch (error) {
-      console.error("Erro ao finalizar:", error);
+      console.error(error);
     }
   };
 
   const completedProjects = projects.filter(p => p.status === 'finished');
   const activeProjects = projects.filter(p => p.status === 'in_progress' || p.status === 'accepted');
-  
   const totalEarnings = completedProjects.reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
 
   return (
