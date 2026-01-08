@@ -3,6 +3,7 @@ import { X, Upload, DollarSign, Type, FileText, MapPin } from 'lucide-react';
 
 export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -22,11 +23,43 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+
+    if (name === 'cep') {
+      const cepClean = value.replace(/\D/g, '');
+      if (cepClean.length === 8) {
+        searchCep(cepClean);
+      }
+    }
   };
 
   const handleFileChange = (e) => {
     setFormData({ ...formData, image: e.target.files[0] });
+  };
+
+  const searchCep = async (cep) => {
+    setIsSearchingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+
+      if (!data.erro) {
+        setFormData(prev => ({
+          ...prev,
+          street: data.logradouro,
+          neighborhood: data.bairro,
+          city: data.localidade,
+          uf: data.uf
+        }));
+      } else {
+        alert("CEP não encontrado!");
+      }
+    } catch (error) {
+      console.error("Erro ao buscar CEP:", error);
+    } finally {
+      setIsSearchingCep(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -95,7 +128,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
                   value={formData.title}
                   placeholder="Ex: Consertar torneira"
                   required
-                  className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600"
+                  className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500"
                   onChange={handleChange}
                 />
               </div>
@@ -111,7 +144,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
                   rows="3"
                   placeholder="Detalhes do serviço..."
                   required
-                  className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:ring-1 focus:ring-blue-600 outline-none resize-none placeholder-gray-600"
+                  className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:ring-1 focus:ring-blue-600 outline-none resize-none placeholder-gray-500"
                   onChange={handleChange}
                 />
               </div>
@@ -144,65 +177,66 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
                     value={formData.price}
                     placeholder="0,00"
                     required
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600"
+                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500"
                     onChange={handleChange}
                   />
                 </div>
               </div>
             </div>
 
-            {}
             <div className="pt-4 border-t border-white/5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-blue-500/10 rounded-full">
                   <MapPin size={18} className="text-blue-500" />
                 </div>
-                <h3 className="text-white font-bold text-sm">Endereço do Serviço</h3>
+                <h3 className="text-white font-bold text-sm">
+                  Endereço do Serviço
+                  {isSearchingCep && <span className="ml-2 text-xs text-blue-400 font-normal animate-pulse">Buscando CEP...</span>}
+                </h3>
               </div>
 
               <div className="grid grid-cols-12 gap-3">
-                {}
                 <div className="col-span-4">
-                  <input type="text" name="cep" value={formData.cep} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
+                  <input 
+                    type="text" 
+                    name="cep" 
+                    placeholder="CEP" 
+                    value={formData.cep} 
+                    onChange={handleChange}
+                    maxLength={9}
+                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" 
+                  />
                 </div>
-                {}
                 <div className="col-span-6">
-                  <input type="text" name="city" value={formData.city} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
+                  <input type="text" name="city" placeholder="Cidade" value={formData.city} onChange={handleChange}
+                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
                 </div>
-                {}
                 <div className="col-span-2">
-                  <input type="text" name="uf" value={formData.uf} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600 text-center" />
+                  <input type="text" name="uf" placeholder="UF" value={formData.uf} onChange={handleChange}
+                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500 text-center" />
                 </div>
 
-                {}
                 <div className="col-span-12">
-                  <input type="text" name="street" value={formData.street} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
+                  <input type="text" name="street" placeholder="Rua / Avenida" value={formData.street} onChange={handleChange}
+                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
                 </div>
 
-                {}
                 <div className="col-span-4">
-                  <input type="text" name="number" value={formData.number} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
+                  <input type="text" name="number" placeholder="Número" value={formData.number} onChange={handleChange}
+                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
                 </div>
-                {}
                 <div className="col-span-8">
-                  <input type="text" name="complement" value={formData.complement} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
+                  <input type="text" name="complement" placeholder="Complemento" value={formData.complement} onChange={handleChange}
+                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
                 </div>
 
-                 {}
                  <div className="col-span-12">
-                  <input type="text" name="neighborhood" value={formData.neighborhood} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
+                  <input type="text" name="neighborhood" placeholder="Bairro" value={formData.neighborhood} onChange={handleChange}
+                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
                 </div>
               </div>
             </div>
 
-            {}
             <button
               type="submit"
               disabled={isLoading}

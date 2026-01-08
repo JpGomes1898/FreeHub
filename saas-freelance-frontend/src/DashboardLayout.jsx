@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, LayoutGrid, PlusCircle, User, Briefcase } from 'lucide-react';
 import CreateServiceModal from './CreateServiceModal';
+import ProfileModal from './ProfileModal';
 
 const BG_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1920&auto=format&fit=crop";
 
 export default function DashboardLayout({ children }) {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const isClient = (user.role === 'client' || user.userType === 'client' || user.userType === 'CLIENTE');
   const isProvider = (user.role === 'provider' || user.userType === 'provider' || user.userType === 'PRESTADOR');
@@ -26,7 +29,6 @@ export default function DashboardLayout({ children }) {
   return (
     <div className="relative min-h-screen w-full flex overflow-hidden text-white">
       
-      {}
       <div 
         className="fixed inset-0 z-0"
         style={{
@@ -37,7 +39,6 @@ export default function DashboardLayout({ children }) {
       />
       <div className="fixed inset-0 bg-black/60 z-0 backdrop-blur-[4px]" />
 
-      {}
       <aside className="relative z-10 w-64 bg-white/5 border-r border-white/10 flex-col justify-between hidden md:flex backdrop-blur-md">
         <div>
           <div className="p-8">
@@ -67,10 +68,9 @@ export default function DashboardLayout({ children }) {
               </button>
             )}
 
-            {}
             {isClient && (
               <button 
-                onClick={() => setIsModalOpen(true)}
+                onClick={() => setIsServiceModalOpen(true)}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 rounded-xl text-gray-300 transition text-left"
               >
                 <PlusCircle size={20} />
@@ -79,7 +79,7 @@ export default function DashboardLayout({ children }) {
             )}
 
             <button 
-              onClick={() => navigate('/profile')}
+              onClick={() => setIsProfileModalOpen(true)} 
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/10 rounded-xl text-gray-300 transition text-left"
             >
               <User size={20} />
@@ -100,14 +100,11 @@ export default function DashboardLayout({ children }) {
         </div>
       </aside>
 
-      {}
       <main className="relative z-10 flex-1 overflow-y-auto h-screen p-4 md:p-10">
-        
-        {}
         <header className="flex md:hidden justify-between items-center mb-6 bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/10">
             <h1 className="text-xl font-bold">Free<span className="text-blue-400">Hub</span></h1>
             {isClient && (
-               <button onClick={() => setIsModalOpen(true)}><PlusCircle size={20} className="text-blue-400"/></button>
+               <button onClick={() => setIsServiceModalOpen(true)}><PlusCircle size={20} className="text-blue-400"/></button>
             )}
             <button onClick={handleLogout}><LogOut size={20} className="text-red-300"/></button>
         </header>
@@ -116,10 +113,16 @@ export default function DashboardLayout({ children }) {
       </main>
 
       <CreateServiceModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        isOpen={isServiceModalOpen} 
+        onClose={() => setIsServiceModalOpen(false)} 
         onServiceCreated={handleServiceCreated}
       />
+
+      <ProfileModal 
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
+
     </div>
   );
 }
