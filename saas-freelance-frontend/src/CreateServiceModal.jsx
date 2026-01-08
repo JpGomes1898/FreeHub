@@ -4,7 +4,6 @@ import { X, Upload, DollarSign, Loader, MapPin } from 'lucide-react';
 export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }) {
   const [loading, setLoading] = useState(false);
   
-  // Estados separados para o endereço
   const [cep, setCep] = useState('');
   const [address, setAddress] = useState({
     street: '',
@@ -21,6 +20,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
     image: null
   });
 
+  // Tenta pegar o usuário e garante que tem ID
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   if (!isOpen) return null;
@@ -41,7 +41,6 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
     }
   };
 
-  // Busca CEP automático
   const handleCepBlur = async () => {
     if (cep.length === 8) {
       try {
@@ -64,22 +63,36 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // VERIFICAÇÃO DE SEGURANÇA: Se não tiver ID, impede o envio e avisa
+    if (!user || !user.id) {
+        alert("Sessão expirada ou inválida. Por favor, saia e faça login novamente.");
+        return;
+    }
+
     setLoading(true);
 
     try {
-      // Monta o endereço completo numa string só para salvar no banco
+      // Formata o endereço
       const fullLocation = `${address.street}, ${address.number} - ${address.neighborhood}, ${address.city}/${address.uf} (CEP: ${cep})`;
 
       const data = new FormData();
       data.append('title', formData.title);
       data.append('description', formData.description);
-      data.append('price', formData.price);
+      data.append('price', String(formData.price)); // Garante que é string
       data.append('userId', user.id);
-      data.append('location', fullLocation); // Envia o endereço
+      data.append('location', fullLocation);
       
       if (formData.image) {
         data.append('image', formData.image);
       }
+
+      console.log("Enviando dados:", { 
+          title: formData.title, 
+          price: formData.price, 
+          userId: user.id, 
+          location: fullLocation 
+      });
 
       const response = await fetch('https://freehub-api.onrender.com/services', {
         method: 'POST',
@@ -92,12 +105,18 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
         onClose();
       } else {
         const errorText = await response.text();
-        console.error("Erro backend:", errorText);
-        alert('Erro ao criar serviço.');
+        console.error("Erro do Backend:", errorText);
+        // Mostra o erro real se possível, ou o genérico
+        try {
+            const errorJson = JSON.parse(errorText);
+            alert(`Erro: ${errorJson.error || 'Falha ao criar serviço'}`);
+        } catch {
+            alert('Erro ao criar serviço. Verifique os dados.');
+        }
       }
     } catch (error) {
-      console.error(error);
-      alert('Erro de conexão.');
+      console.error("Erro de Rede:", error);
+      alert('Erro de conexão. Verifique sua internet.');
     } finally {
       setLoading(false);
     }
