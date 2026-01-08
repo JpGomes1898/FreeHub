@@ -8,18 +8,17 @@ datasource db {
 }
 
 model User {
-  id               String    @id @default(uuid())
-  name             String
-  email            String    @unique
-  password         String
-  userType         String    @default("client")
-  createdAt        DateTime  @default(now())
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  userType  String    
+  createdAt DateTime  @default(now())
 
-  servicesCreated  Service[] @relation("ClientServices")
-  servicesProvided Service[] @relation("ProviderServices")
-
-  messages         Message[]
+  servicesClient   Service[] @relation("ClientServices")
+  servicesProvider Service[] @relation("ProviderServices")
   reviews          Review[]
+  messagesSent     Message[]
 }
 
 model Service {
@@ -28,12 +27,12 @@ model Service {
   description String
   price       String
   imageUrl    String?
+  location    String?  
   status      String   @default("open")
   createdAt   DateTime @default(now())
 
   userId      String
   client      User     @relation("ClientServices", fields: [userId], references: [id])
-
   providerId  String?
   provider    User?    @relation("ProviderServices", fields: [providerId], references: [id])
 
@@ -47,10 +46,10 @@ model Message {
   createdAt DateTime @default(now())
 
   serviceId String
-  service   Service  @relation(fields: [serviceId], references: [id])
+  service   Service @relation(fields: [serviceId], references: [id])
 
   senderId  String
-  sender    User     @relation(fields: [senderId], references: [id])
+  sender    User    @relation(fields: [senderId], references: [id])
 }
 
 model Review {

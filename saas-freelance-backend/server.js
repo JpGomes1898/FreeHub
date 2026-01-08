@@ -72,7 +72,7 @@ app.post('/login', async (req, res) => {
 });
 
 app.post('/services', upload.single('image'), async (req, res) => {
-  const { title, description, price, userId } = req.body;
+  const { title, description, price, userId, location } = req.body;
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
   console.log('Criando serviço para user:', userId);
 
@@ -83,6 +83,7 @@ app.post('/services', upload.single('image'), async (req, res) => {
         description,
         price,
         imageUrl,
+        location,
         userId
       }
     });
