@@ -3,8 +3,7 @@ import DashboardLayout from './DashboardLayout';
 import ServiceCard from './ServiceCard';
 import NegotiateModal from './NegotiateModal';
 import ServiceDetailsModal from './ServiceDetailsModal'; 
-import CreateServiceModal from './CreateServiceModal'; // <--- IMPORTAMOS O MODAL AQUI
-import { Search, CheckCircle, AlertTriangle, Plus } from 'lucide-react';
+import { Search, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export default function Dashboard() {
   const [services, setServices] = useState([]);
@@ -12,16 +11,12 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [hiddenServices, setHiddenServices] = useState([]); 
   
-  // ESTADO PARA ABRIR/FECHAR O MODAL DE NOVO SERVIÇO
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-
   const [isNegotiateModalOpen, setIsNegotiateModalOpen] = useState(false);
   const [selectedServiceForNegotiation, setSelectedServiceForNegotiation] = useState(null);
   const [notification, setNotification] = useState(null);
   const [selectedServiceDetails, setSelectedServiceDetails] = useState(null);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  const isClient = user.role === 'client' || user.userType === 'client';
 
   useEffect(() => {
     fetchServices();
@@ -44,11 +39,6 @@ export default function Dashboard() {
     }
   };
 
-  const handleServiceCreated = () => {
-    fetchServices(); // Recarrega a lista
-    showToast("Serviço criado com sucesso!", "success");
-  };
-
   const handleAccept = async (serviceId) => {
     try {
       const response = await fetch(`https://freehub-api.onrender.com/services/${serviceId}/accept`, {
@@ -57,7 +47,7 @@ export default function Dashboard() {
         body: JSON.stringify({ providerId: user.id })
       });
       if (response.ok) {
-        showToast("Serviço aceito!", "success");
+        showToast("Serviço aceito! Veja em 'Meus Projetos'.", "success");
         fetchServices();
       } else showToast("Erro ao aceitar.", "error");
     } catch (error) { showToast("Erro de conexão.", "error"); }
@@ -77,7 +67,7 @@ export default function Dashboard() {
         body: JSON.stringify({ providerId: user.id, newPrice })
       });
       if (response.ok) {
-        showToast("Proposta enviada!", "success");
+        showToast(`Proposta enviada!`, "success");
         fetchServices();
       } else showToast("Erro ao enviar proposta.", "error");
     } catch (error) { showToast("Erro de conexão.", "error"); }
@@ -118,6 +108,7 @@ export default function Dashboard() {
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto relative">
+        
         {notification && (
           <div className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 transition-all ${notification.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`}>
             {notification.type === 'success' ? <CheckCircle size={24} /> : <AlertTriangle size={24} />}
@@ -125,6 +116,7 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* CABEÇALHO LIMPO (Sem o botão duplicado) */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
             <h2 className="text-3xl font-bold text-white">Mural de Oportunidades</h2>
@@ -132,16 +124,6 @@ export default function Dashboard() {
           </div>
           
           <div className="flex gap-2 w-full md:w-auto items-center">
-             {isClient && (
-                // BOTÃO AGORA ABRE O MODAL AO INVÉS DE USAR LINK
-                <button 
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-medium transition shadow-lg whitespace-nowrap"
-                >
-                  <Plus size={20} />
-                  Novo Serviço
-                </button>
-             )}
              <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
               <input type="text" placeholder="Buscar serviços..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
@@ -151,7 +133,9 @@ export default function Dashboard() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div></div>
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-400"></div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredServices.length > 0 ? (
@@ -168,16 +152,13 @@ export default function Dashboard() {
                   onClick={() => setSelectedServiceDetails(service)} 
                 />
               ))
-            ) : <div className="col-span-full text-center py-20 text-gray-500">Nenhum serviço encontrado.</div>}
+            ) : (
+              <div className="col-span-full text-center py-20 text-gray-500">
+                Nenhum serviço encontrado.
+              </div>
+            )}
           </div>
         )}
-
-        {/* MODAL DE CRIAR SERVIÇO */}
-        <CreateServiceModal 
-          isOpen={isCreateModalOpen} 
-          onClose={() => setIsCreateModalOpen(false)} 
-          onServiceCreated={handleServiceCreated}
-        />
 
         <NegotiateModal 
           isOpen={isNegotiateModalOpen} 
@@ -197,6 +178,7 @@ export default function Dashboard() {
           onClientApprove={handleClientApprove}
           onClientReject={handleClientReject}
        />
+
       </div>
     </DashboardLayout>
   );
