@@ -8,6 +8,8 @@ export default function ServiceCard({ service, userType, onAccept, onCounterOffe
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const isOwner = userType === 'client'; 
   
+  const priceValue = Number(service.price) || 0;
+
   const handleChatClick = (e) => {
     e.stopPropagation();
     setIsChatOpen(true);
@@ -31,7 +33,9 @@ export default function ServiceCard({ service, userType, onAccept, onCounterOffe
             </div>
           )}
           <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
-            <span className="text-emerald-400 font-bold text-sm">R$ {service.price}</span>
+            <span className="text-emerald-400 font-bold text-sm">
+              R$ {priceValue.toFixed(2).replace('.', ',')}
+            </span>
           </div>
         </div>
 
@@ -101,7 +105,9 @@ export default function ServiceCard({ service, userType, onAccept, onCounterOffe
               <div className="space-y-2">
                 <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-lg text-center">
                   <p className="text-yellow-500 text-xs font-bold mb-1">NOVA PROPOSTA</p>
-                  <p className="text-white font-bold text-lg">R$ {service.price}</p>
+                  <p className="text-white font-bold text-lg">
+                    R$ {priceValue.toFixed(2).replace('.', ',')}
+                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button 

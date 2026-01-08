@@ -1,250 +1,128 @@
-import React, { useState } from 'react';
-import { X, Upload, DollarSign, Type, FileText, MapPin } from 'lucide-react';
+import React from 'react';
+import { X, MapPin, Calendar, DollarSign, User, CheckCircle, AlertTriangle } from 'lucide-react';
 
-export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSearchingCep, setIsSearchingCep] = useState(false);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    image: null,
-    cep: '',
-    city: '',
-    uf: '',
-    street: '',
-    number: '',
-    complement: '',
-    neighborhood: ''
-  });
+export default function ServiceDetailsModal({ service, isOpen, onClose, userType, onAccept, onCounterOffer, onClientApprove, onClientReject }) {
+  if (!isOpen || !service) return null;
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-
-  if (!isOpen) return null;
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-
-    if (name === 'cep') {
-      const cepClean = value.replace(/\D/g, '');
-      if (cepClean.length === 8) {
-        searchCep(cepClean);
-      }
-    }
-  };
-
-  const handleFileChange = (e) => {
-    setFormData({ ...formData, image: e.target.files[0] });
-  };
-
-  const searchCep = async (cep) => {
-    setIsSearchingCep(true);
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-      const data = await response.json();
-
-      if (!data.erro) {
-        setFormData(prev => ({
-          ...prev,
-          street: data.logradouro,
-          neighborhood: data.bairro,
-          city: data.localidade,
-          uf: data.uf
-        }));
-      } else {
-        alert("CEP não encontrado!");
-      }
-    } catch (error) {
-      console.error("Erro ao buscar CEP:", error);
-    } finally {
-      setIsSearchingCep(false);
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const fullAddress = `\n\n📍 Endereço do Serviço:\n${formData.street}, ${formData.number} - ${formData.neighborhood}\n${formData.city}/${formData.uf} - CEP: ${formData.cep}\n${formData.complement}`;
-      
-      const finalDescription = formData.description + fullAddress;
-
-      const data = new FormData();
-      data.append('title', formData.title);
-      data.append('description', finalDescription);
-      data.append('price', formData.price);
-      data.append('userId', user.id);
-      
-      if (formData.image) {
-        data.append('image', formData.image);
-      }
-
-      const response = await fetch('https://freehub-api.onrender.com/services', {
-        method: 'POST',
-        body: data, 
-      });
-
-      if (response.ok) {
-        onServiceCreated();
-        onClose();
-        setFormData({ 
-          title: '', description: '', price: '', image: null,
-          cep: '', city: '', uf: '', street: '', number: '', complement: '', neighborhood: ''
-        });
-      } else {
-        alert('Erro ao criar o serviço.');
-      }
-    } catch (error) {
-      console.error(error);
-      alert('Erro de conexão.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const isOwner = userType === 'client';
+  
+  const priceValue = Number(service.price) || 0;
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[#0f1014] border border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      <div className="bg-[#18181b] border border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
-        <div className="flex justify-between items-center p-6 border-b border-white/10">
-          <h2 className="text-xl font-bold text-white">Novo Pedido</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition">
-            <X size={24} />
+        <div className="h-48 bg-[#0f1014] relative">
+          {service.imageUrl ? (
+            <img 
+              src={`https://freehub-api.onrender.com${service.imageUrl}`} 
+              alt={service.title} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-600">
+              Sem imagem disponível
+            </div>
+          )}
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/80 text-white rounded-full transition"
+          >
+            <X size={20} />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto custom-scrollbar">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-1">{service.title}</h2>
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Calendar size={14} />
+                <span>Publicado em {new Date(service.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Valor do Serviço</p>
+              <span className="text-2xl font-bold text-emerald-400">
+                R$ {priceValue.toFixed(2).replace('.', ',')}
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/5">
+            <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+              <User size={16} className="text-blue-400" />
+              Sobre o Cliente
+            </h3>
+            <p className="text-gray-300 text-sm">
+              {service.client?.name || 'Usuário do FreeHub'}
+            </p>
+            <p className="text-gray-500 text-xs mt-1">{service.client?.email}</p>
+          </div>
+
+          <div className="space-y-4 mb-6">
+            <div>
+              <h3 className="text-sm font-bold text-gray-300 mb-2">Descrição</h3>
+              <p className="text-gray-400 leading-relaxed text-sm">
+                {service.description}
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-gray-300 mb-2 flex items-center gap-2">
+                <MapPin size={16} /> Localização
+              </h3>
+              <p className="text-gray-400 text-sm">
+                {service.description.includes('Rua') || service.description.includes('Av') 
+                  ? 'Endereço detalhado na descrição.' 
+                  : 'Localização a combinar com o cliente.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-white/10 flex gap-3 justify-end">
+            {!isOwner && service.status === 'open' && (
+              <>
+                <button 
+                  onClick={() => { onAccept(service.id); onClose(); }}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold transition flex items-center gap-2"
+                >
+                  <CheckCircle size={18} /> Aceitar Serviço
+                </button>
+                <button 
+                  onClick={() => { onCounterOffer(service); onClose(); }}
+                  className="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-6 py-2.5 rounded-xl font-bold transition"
+                >
+                  Negociar Valor
+                </button>
+              </>
+            )}
+
+            {isOwner && service.status === 'pending_approval' && (
+              <>
+                 <button 
+                  onClick={() => { onClientApprove(service.id); onClose(); }}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold transition"
+                >
+                  Aprovar Proposta
+                </button>
+                <button 
+                  onClick={() => { onClientReject(service.id); onClose(); }}
+                  className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-6 py-2.5 rounded-xl font-bold transition"
+                >
+                  Recusar
+                </button>
+              </>
+            )}
             
-            <div className="space-y-1">
-              <label className="text-gray-400 text-xs uppercase font-bold tracking-wider">Título</label>
-              <div className="relative">
-                <Type className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  placeholder="Ex: Consertar torneira"
-                  required
-                  className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500"
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-gray-400 text-xs uppercase font-bold tracking-wider">Descrição</label>
-              <div className="relative">
-                <FileText className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  rows="3"
-                  placeholder="Detalhes do serviço..."
-                  required
-                  className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:ring-1 focus:ring-blue-600 outline-none resize-none placeholder-gray-500"
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               <div className="space-y-1">
-                <label className="text-gray-400 text-xs uppercase font-bold tracking-wider">Foto do Problema (Opcional)</label>
-                <div className="relative">
-                  <div className="w-full bg-[#18181b] border border-white/10 rounded-lg py-2 px-2 flex items-center">
-                    <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-1.5 px-3 rounded flex items-center gap-2 transition">
-                      <Upload size={14} />
-                      Escolher arquivo
-                      <input type="file" name="image" accept="image/*" className="hidden" onChange={handleFileChange} />
-                    </label>
-                    <span className="ml-3 text-xs text-gray-500 truncate">
-                      {formData.image ? formData.image.name : 'Nenhum... escolhido'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-gray-400 text-xs uppercase font-bold tracking-wider">Orçamento Sugerido (R$)</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-500" />
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    placeholder="0,00"
-                    required
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 pl-10 pr-4 text-white focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500"
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-white/5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 bg-blue-500/10 rounded-full">
-                  <MapPin size={18} className="text-blue-500" />
-                </div>
-                <h3 className="text-white font-bold text-sm">
-                  Endereço do Serviço
-                  {isSearchingCep && <span className="ml-2 text-xs text-blue-400 font-normal animate-pulse">Buscando CEP...</span>}
-                </h3>
-              </div>
-
-              <div className="grid grid-cols-12 gap-3">
-                <div className="col-span-4">
-                  <input 
-                    type="text" 
-                    name="cep" 
-                    placeholder="CEP" 
-                    value={formData.cep} 
-                    onChange={handleChange}
-                    maxLength={9}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" 
-                  />
-                </div>
-                <div className="col-span-6">
-                  <input type="text" name="city" placeholder="Cidade" value={formData.city} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
-                </div>
-                <div className="col-span-2">
-                  <input type="text" name="uf" placeholder="UF" value={formData.uf} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500 text-center" />
-                </div>
-
-                <div className="col-span-12">
-                  <input type="text" name="street" placeholder="Rua / Avenida" value={formData.street} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
-                </div>
-
-                <div className="col-span-4">
-                  <input type="text" name="number" placeholder="Número" value={formData.number} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
-                </div>
-                <div className="col-span-8">
-                  <input type="text" name="complement" placeholder="Complemento" value={formData.complement} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
-                </div>
-
-                 <div className="col-span-12">
-                  <input type="text" name="neighborhood" placeholder="Bairro" value={formData.neighborhood} onChange={handleChange}
-                    className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-500" />
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-blue-900/20 disabled:opacity-50 mt-2"
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-white px-4 py-2 transition text-sm"
             >
-              {isLoading ? 'Publicando...' : 'Publicar Pedido'}
+              Fechar
             </button>
-          </form>
+          </div>
+
         </div>
       </div>
     </div>
