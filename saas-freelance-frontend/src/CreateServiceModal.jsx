@@ -1,129 +1,141 @@
-import React from 'react';
-import { X, MapPin, Calendar, DollarSign, User, CheckCircle, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Upload, DollarSign, Loader } from 'lucide-react';
 
-export default function ServiceDetailsModal({ service, isOpen, onClose, userType, onAccept, onCounterOffer, onClientApprove, onClientReject }) {
-  if (!isOpen || !service) return null;
+export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }) {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    image: null
+  });
 
-  const isOwner = userType === 'client';
-  
-  const priceValue = Number(service.price) || 0;
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  if (!isOpen) return null;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFormData(prev => ({ ...prev, image: e.target.files[0] }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const data = new FormData();
+      data.append('title', formData.title);
+      data.append('description', formData.description);
+      data.append('price', formData.price);
+      data.append('userId', user.id);
+      if (formData.image) {
+        data.append('image', formData.image);
+      }
+
+      const response = await fetch('https://freehub-api.onrender.com/services', {
+        method: 'POST',
+        body: data
+      });
+
+      if (response.ok) {
+        alert('Serviço criado com sucesso!');
+        onServiceCreated();
+        onClose();
+      } else {
+        const errorText = await response.text();
+        console.error("Erro backend:", errorText);
+        alert('Erro ao criar serviço. Tente novamente.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Erro de conexão.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-      <div className="bg-[#18181b] border border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-[#18181b] border border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
         
-        <div className="h-48 bg-[#0f1014] relative">
-          {service.imageUrl ? (
-            <img 
-              src={`https://freehub-api.onrender.com${service.imageUrl}`} 
-              alt={service.title} 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-600">
-              Sem imagem disponível
-            </div>
-          )}
-          <button 
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/80 text-white rounded-full transition"
-          >
-            <X size={20} />
+        <div className="flex justify-between items-center p-6 border-b border-white/10">
+          <h2 className="text-xl font-bold text-white">Novo Pedido</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition">
+            <X size={24} />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto custom-scrollbar">
-          <div className="flex justify-between items-start mb-4">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto custom-scrollbar space-y-6">
+          
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Título do Pedido</label>
+            <input 
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Ex: Formatar Computador, Consertar Vazamento..."
+              className="w-full bg-[#0f1014] border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-1">{service.title}</h2>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <Calendar size={14} />
-                <span>Publicado em {new Date(service.createdAt).toLocaleDateString()}</span>
+              <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Foto (Opcional)</label>
+              <label className="flex items-center gap-3 px-4 py-3 bg-[#0f1014] border border-white/10 rounded-xl cursor-pointer hover:bg-white/5 transition group">
+                <Upload size={20} className="text-blue-500 group-hover:text-blue-400" />
+                <span className="text-sm text-gray-400 truncate">
+                  {formData.image ? formData.image.name : 'Escolher arquivo'}
+                </span>
+                <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Orçamento Sugerido (R$)</label>
+              <div className="relative">
+                <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input 
+                  name="price"
+                  type="number"
+                  value={formData.price}
+                  onChange={handleChange}
+                  placeholder="0,00"
+                  className="w-full bg-[#0f1014] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Valor do Serviço</p>
-              <span className="text-2xl font-bold text-emerald-400">
-                R$ {priceValue.toFixed(2).replace('.', ',')}
-              </span>
-            </div>
           </div>
 
-          <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/5">
-            <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-              <User size={16} className="text-blue-400" />
-              Sobre o Cliente
-            </h3>
-            <p className="text-gray-300 text-sm">
-              {service.client?.name || 'Usuário do FreeHub'}
-            </p>
-            <p className="text-gray-500 text-xs mt-1">{service.client?.email}</p>
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Descrição Detalhada</label>
+            <textarea 
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Descreva o que você precisa..."
+              className="w-full bg-[#0f1014] border border-white/10 rounded-xl p-3 text-white h-32 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
           </div>
 
-          <div className="space-y-4 mb-6">
-            <div>
-              <h3 className="text-sm font-bold text-gray-300 mb-2">Descrição</h3>
-              <p className="text-gray-400 leading-relaxed text-sm">
-                {service.description}
-              </p>
-            </div>
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {loading ? <Loader className="animate-spin" /> : 'Publicar Pedido'}
+          </button>
 
-            <div>
-              <h3 className="text-sm font-bold text-gray-300 mb-2 flex items-center gap-2">
-                <MapPin size={16} /> Localização
-              </h3>
-              <p className="text-gray-400 text-sm">
-                {service.description.includes('Rua') || service.description.includes('Av') 
-                  ? 'Endereço detalhado na descrição.' 
-                  : 'Localização a combinar com o cliente.'}
-              </p>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-white/10 flex gap-3 justify-end">
-            {!isOwner && service.status === 'open' && (
-              <>
-                <button 
-                  onClick={() => { onAccept(service.id); onClose(); }}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold transition flex items-center gap-2"
-                >
-                  <CheckCircle size={18} /> Aceitar Serviço
-                </button>
-                <button 
-                  onClick={() => { onCounterOffer(service); onClose(); }}
-                  className="bg-white/5 hover:bg-white/10 text-white border border-white/10 px-6 py-2.5 rounded-xl font-bold transition"
-                >
-                  Negociar Valor
-                </button>
-              </>
-            )}
-
-            {isOwner && service.status === 'pending_approval' && (
-              <>
-                 <button 
-                  onClick={() => { onClientApprove(service.id); onClose(); }}
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold transition"
-                >
-                  Aprovar Proposta
-                </button>
-                <button 
-                  onClick={() => { onClientReject(service.id); onClose(); }}
-                  className="bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 px-6 py-2.5 rounded-xl font-bold transition"
-                >
-                  Recusar
-                </button>
-              </>
-            )}
-            
-            <button 
-              onClick={onClose}
-              className="text-gray-500 hover:text-white px-4 py-2 transition text-sm"
-            >
-              Fechar
-            </button>
-          </div>
-
-        </div>
+        </form>
       </div>
     </div>
   );
