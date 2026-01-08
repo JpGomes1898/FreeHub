@@ -16,6 +16,11 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 const uploadDir = 'uploads';
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
@@ -34,6 +39,8 @@ const upload = multer({ storage });
 
 app.post('/register', async (req, res) => {
   const { name, email, password, userType } = req.body;
+  console.log('Tentando registrar:', email);
+
   try {
     const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
@@ -42,8 +49,10 @@ app.post('/register', async (req, res) => {
     const user = await prisma.user.create({
       data: { name, email, password, userType }
     });
+    console.log('Usuário criado com sucesso:', user.id);
     res.json(user);
   } catch (error) {
+    console.error('ERRO NO REGISTRO:', error);
     res.status(500).json({ error: 'Erro ao criar conta.' });
   }
 });
@@ -57,6 +66,7 @@ app.post('/login', async (req, res) => {
     }
     res.json(user);
   } catch (error) {
+    console.error('ERRO NO LOGIN:', error);
     res.status(500).json({ error: 'Erro ao fazer login.' });
   }
 });
@@ -64,6 +74,7 @@ app.post('/login', async (req, res) => {
 app.post('/services', upload.single('image'), async (req, res) => {
   const { title, description, price, userId } = req.body;
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  console.log('Criando serviço para user:', userId);
 
   try {
     const service = await prisma.service.create({
@@ -77,7 +88,7 @@ app.post('/services', upload.single('image'), async (req, res) => {
     });
     res.json(service);
   } catch (error) {
-    console.error(error);
+    console.error('ERRO AO CRIAR SERVIÇO:', error);
     res.status(500).json({ error: 'Erro ao criar serviço.' });
   }
 });
@@ -94,6 +105,7 @@ app.get('/services', async (req, res) => {
     });
     res.json(services);
   } catch (error) {
+    console.error('ERRO AO BUSCAR SERVIÇOS:', error);
     res.status(500).json({ error: 'Erro ao buscar serviços.' });
   }
 });
@@ -111,6 +123,7 @@ app.patch('/services/:id/accept', async (req, res) => {
     });
     res.json(service);
   } catch (error) {
+    console.error('ERRO AO ACEITAR:', error);
     res.status(500).json({ error: 'Erro ao aceitar serviço.' });
   }
 });
@@ -124,6 +137,7 @@ app.patch('/services/:id/finish', async (req, res) => {
     });
     res.json(service);
   } catch (error) {
+    console.error('ERRO AO FINALIZAR:', error);
     res.status(500).json({ error: 'Erro ao finalizar serviço.' });
   }
 });
@@ -138,6 +152,7 @@ app.get('/services/:id/messages', async (req, res) => {
     });
     res.json(messages);
   } catch (error) {
+    console.error('ERRO MENSAGENS:', error);
     res.status(500).json({ error: 'Erro ao buscar mensagens' });
   }
 });
@@ -150,6 +165,7 @@ app.post('/messages', async (req, res) => {
     });
     res.json(message);
   } catch (error) {
+    console.error('ERRO AO ENVIAR MENSAGEM:', error);
     res.status(500).json({ error: 'Erro ao enviar mensagem' });
   }
 });
@@ -167,7 +183,7 @@ app.post('/reviews', async (req, res) => {
     });
     res.json(review);
   } catch (error) {
-    console.error(error);
+    console.error('ERRO AVALIAÇÃO:', error);
     res.status(500).json({ error: 'Erro ao salvar avaliação' });
   }
 });
