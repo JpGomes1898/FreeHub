@@ -8,7 +8,6 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
     description: '',
     price: '',
     image: null,
-    // Novos campos de endereço (Visualmente igual ao vídeo)
     cep: '',
     city: '',
     uf: '',
@@ -35,15 +34,13 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
     setIsLoading(true);
 
     try {
-      // TRUQUE: Juntamos o endereço na descrição para não perder os dados
-      // já que o banco de dados ainda não tem colunas de endereço separadas.
       const fullAddress = `\n\n📍 Endereço do Serviço:\n${formData.street}, ${formData.number} - ${formData.neighborhood}\n${formData.city}/${formData.uf} - CEP: ${formData.cep}\n${formData.complement}`;
       
       const finalDescription = formData.description + fullAddress;
 
       const data = new FormData();
       data.append('title', formData.title);
-      data.append('description', finalDescription); // Envia descrição + endereço
+      data.append('description', finalDescription);
       data.append('price', formData.price);
       data.append('userId', user.id);
       
@@ -59,7 +56,6 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
       if (response.ok) {
         onServiceCreated();
         onClose();
-        // Limpa o formulário
         setFormData({ 
           title: '', description: '', price: '', image: null,
           cep: '', city: '', uf: '', street: '', number: '', complement: '', neighborhood: ''
@@ -77,10 +73,8 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      {/* Container com estilo escuro igual ao vídeo */}
       <div className="bg-[#0f1014] border border-white/10 w-full max-w-2xl rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh]">
         
-        {/* Cabeçalho */}
         <div className="flex justify-between items-center p-6 border-b border-white/10">
           <h2 className="text-xl font-bold text-white">Novo Pedido</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition">
@@ -88,11 +82,9 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
           </button>
         </div>
 
-        {/* Formulário com Scroll */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
           <form onSubmit={handleSubmit} className="space-y-5">
             
-            {/* Título */}
             <div className="space-y-1">
               <label className="text-gray-400 text-xs uppercase font-bold tracking-wider">Título</label>
               <div className="relative">
@@ -109,7 +101,6 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
               </div>
             </div>
 
-            {/* Descrição */}
             <div className="space-y-1">
               <label className="text-gray-400 text-xs uppercase font-bold tracking-wider">Descrição</label>
               <div className="relative">
@@ -126,7 +117,6 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
               </div>
             </div>
 
-            {/* Grid: Foto e Orçamento */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <div className="space-y-1">
                 <label className="text-gray-400 text-xs uppercase font-bold tracking-wider">Foto do Problema (Opcional)</label>
@@ -161,7 +151,7 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
               </div>
             </div>
 
-            {/* SEÇÃO ENDEREÇO (Igual ao vídeo) */}
+            {}
             <div className="pt-4 border-t border-white/5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 bg-blue-500/10 rounded-full">
@@ -171,48 +161,48 @@ export default function CreateServiceModal({ isOpen, onClose, onServiceCreated }
               </div>
 
               <div className="grid grid-cols-12 gap-3">
-                {/* CEP */}
+                {}
                 <div className="col-span-4">
-                  <input type="text" name="cep" placeholder="21521530" value={formData.cep} onChange={handleChange}
+                  <input type="text" name="cep" value={formData.cep} onChange={handleChange}
                     className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
                 </div>
-                {/* Cidade */}
+                {}
                 <div className="col-span-6">
-                  <input type="text" name="city" placeholder="Rio de Janeiro" value={formData.city} onChange={handleChange}
+                  <input type="text" name="city" value={formData.city} onChange={handleChange}
                     className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
                 </div>
-                {/* UF */}
+                {}
                 <div className="col-span-2">
-                  <input type="text" name="uf" placeholder="RJ" value={formData.uf} onChange={handleChange}
+                  <input type="text" name="uf" value={formData.uf} onChange={handleChange}
                     className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600 text-center" />
                 </div>
 
-                {/* Rua */}
+                {}
                 <div className="col-span-12">
-                  <input type="text" name="street" placeholder="Rua Botumirim" value={formData.street} onChange={handleChange}
+                  <input type="text" name="street" value={formData.street} onChange={handleChange}
                     className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
                 </div>
 
-                {/* Número */}
+                {}
                 <div className="col-span-4">
-                  <input type="text" name="number" placeholder="Nº" value={formData.number} onChange={handleChange}
+                  <input type="text" name="number" value={formData.number} onChange={handleChange}
                     className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
                 </div>
-                {/* Complemento */}
+                {}
                 <div className="col-span-8">
-                  <input type="text" name="complement" placeholder="Complemento" value={formData.complement} onChange={handleChange}
+                  <input type="text" name="complement" value={formData.complement} onChange={handleChange}
                     className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
                 </div>
 
-                 {/* Bairro */}
+                 {}
                  <div className="col-span-12">
-                  <input type="text" name="neighborhood" placeholder="Bairro (ex: Pavuna)" value={formData.neighborhood} onChange={handleChange}
+                  <input type="text" name="neighborhood" value={formData.neighborhood} onChange={handleChange}
                     className="w-full bg-[#18181b] border border-white/10 rounded-lg py-3 px-4 text-white text-sm focus:ring-1 focus:ring-blue-600 outline-none placeholder-gray-600" />
                 </div>
               </div>
             </div>
 
-            {/* Botão de Enviar */}
+            {}
             <button
               type="submit"
               disabled={isLoading}
