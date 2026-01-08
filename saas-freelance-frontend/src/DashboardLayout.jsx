@@ -8,7 +8,21 @@ const BG_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?q
 
 export default function DashboardLayout({ children }) {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  let user = {};
+  try {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser && storedUser !== "undefined" && storedUser !== "null") {
+      user = JSON.parse(storedUser);
+    } else {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    }
+  } catch (error) {
+    console.error("Erro crítico ao ler usuário:", error);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+  }
   
   const isSuperUser = user.role === 'provider' || user.userType === 'provider' || user.userType === 'PRESTADOR';
 
@@ -61,7 +75,7 @@ export default function DashboardLayout({ children }) {
               Free<span className="text-blue-400">Hub</span>
             </h1>
             <div className="flex flex-col mt-2">
-                <p className="text-xs text-gray-400">Olá, {user.name?.split(' ')[0]}</p>
+                <p className="text-xs text-gray-400">Olá, {user.name?.split(' ')[0] || 'Visitante'}</p>
                 {isSuperUser && (
                   <span className={`text-[10px] font-bold uppercase tracking-wider mt-1 w-fit px-2 py-0.5 rounded ${
                       isProviderView ? 'bg-emerald-500/20 text-emerald-400' : 'bg-blue-500/20 text-blue-400'
