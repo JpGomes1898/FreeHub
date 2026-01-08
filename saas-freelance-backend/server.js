@@ -189,6 +189,59 @@ app.post('/reviews', async (req, res) => {
   }
 });
 
+// --- ROTAS DE NEGOCIAÇÃO (ADICIONE ISSO) ---
+
+app.patch('/services/:id/offer', async (req, res) => {
+  const { id } = req.params;
+  const { newPrice, providerId } = req.body;
+  console.log(`Recebendo oferta para serviço ${id}: R$ ${newPrice} do provider ${providerId}`);
+  
+  try {
+    const service = await prisma.service.update({
+      where: { id },
+      data: { 
+        price: String(newPrice), // Atualiza o preço
+        providerId: providerId,  // Vincula o prestador temporariamente
+        status: 'pending_approval' // Muda status para o cliente aprovar
+      }
+    });
+    res.json(service);
+  } catch (error) {
+    console.error('ERRO AO ENVIAR PROPOSTA:', error);
+    res.status(500).json({ error: 'Erro ao processar proposta.' });
+  }
+});
+
+app.patch('/services/:id/approve', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const service = await prisma.service.update({
+      where: { id },
+      data: { status: 'accepted' } // Aceita e fecha negócio
+    });
+    res.json(service);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao aprovar.' });
+  }
+});
+
+app.patch('/services/:id/reject', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Se rejeitar, volta a ficar "open" e sem dono
+    const service = await prisma.service.update({
+      where: { id },
+      data: { 
+        status: 'open',
+        providerId: null 
+      } 
+    });
+    res.json(service);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao rejeitar.' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
